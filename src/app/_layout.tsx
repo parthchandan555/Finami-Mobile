@@ -1,18 +1,58 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import React from 'react';
+import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { AuthProvider, useAuth } from '@/context/auth';
+import LoginScreen from '@/screens/login';
 
 SplashScreen.preventAutoHideAsync();
+
+// TEMP-REMOVE-BEFORE-CA-HOME: floating logout for auth testing only.
+function TempLogout() {
+  const { signOut } = useAuth();
+  return (
+    <View style={tempStyles.wrap} pointerEvents="box-none">
+      <Pressable style={tempStyles.btn} onPress={signOut}>
+        <Text style={tempStyles.txt}>Log out (temp)</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function Gate() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  if (!session) return <LoginScreen />;
+  return (
+    <>
+      <AppTabs />
+      <TempLogout />
+    </>
+  );
+}
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+      <AuthProvider>
+        <AnimatedSplashOverlay />
+        <Gate />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
+
+const tempStyles = StyleSheet.create({
+  wrap: { position: 'absolute', top: 64, right: 16 },
+  btn: {
+    backgroundColor: '#FF453A',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  txt: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+});
