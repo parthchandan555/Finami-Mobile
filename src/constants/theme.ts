@@ -1,6 +1,10 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Finamize design tokens. Locked palette per project instructions §6.
+ * accent / accentSecondary / destructive / warning / success are identical
+ * across both themes. Secondary text is full-contrast foreground (NO grey
+ * text) — de-emphasis comes from size/weight in the type ladder, never
+ * opacity. The 16% tint backgrounds are precomputed as static hex (RN has no
+ * color-mix): each token color at 16% alpha composited over the theme bg.
  */
 
 import '@/global.css';
@@ -10,35 +14,59 @@ import { Platform } from 'react-native';
 export const Colors = {
   light: {
     text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    textSecondary: '#000000',
+    background: '#FFFFFF',
+    backgroundElement: '#F2F2F7',
+    backgroundSelected: '#E5E5EA',
+    accent: '#0A84FF',
+    accentSecondary: '#7C6FE3',
+    destructive: '#FF453A',
+    warning: '#FF9F0A',
+    success: '#30D158',
+    accentTint: '#D8EBFF',
+    accentSecondaryTint: '#EAE8FB',
+    destructiveTint: '#FFE1DF',
+    warningTint: '#FFF0D8',
+    successTint: '#DEF8E4',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#FFFFFF',
+    textSecondary: '#FFFFFF',
+    background: '#080808',
+    backgroundElement: '#121212',
+    backgroundSelected: '#1A1A1A',
+    accent: '#0A84FF',
+    accentSecondary: '#7C6FE3',
+    destructive: '#FF453A',
+    warning: '#FF9F0A',
+    success: '#30D158',
+    accentTint: '#081C30',
+    accentSecondaryTint: '#1B182B',
+    destructiveTint: '#301210',
+    warningTint: '#302008',
+    successTint: '#0E2815',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/** Plus Jakarta Sans weight families (loaded in src/app/_layout.tsx). */
+export const FontFamily = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
+    sans: 'PlusJakartaSans_400Regular',
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: 'PlusJakartaSans_400Regular',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
