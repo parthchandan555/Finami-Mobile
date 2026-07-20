@@ -25,14 +25,14 @@ function tierColors(tier: TriageTier, c: (typeof Colors)[keyof typeof Colors]) {
   }
 }
 
-export function TriageRow({ item, onPress }: { item: TriageItem; onPress: (href: string) => void }) {
+export function TriageRow({ item, onPress }: { item: TriageItem; onPress: (target: TriageItem | string) => void }) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
   const t = tierColors(item.tier, c);
 
   return (
     <Pressable
-      onPress={() => onPress(item.href)}
+      onPress={() => onPress(item)}
       style={({ pressed }) => [
         styles.row,
         { backgroundColor: pressed ? c.backgroundSelected : c.backgroundElement },
