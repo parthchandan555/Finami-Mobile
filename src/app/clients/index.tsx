@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stack, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -12,18 +13,14 @@ import { fetchClientList, type ClientListEntry } from '@/lib/clients/data';
 /**
  * Clients — read-only (v1 scope: list only, no add/edit, no writes).
  *
- * This screen replaces the stock Expo "Explore" template screen. The route
- * name stays `explore` deliberately: the root layout renders NativeTabs with
- * explicit triggers, so renaming the file would mean restructuring the
- * navigator. Only the tab's visible label changed.
- *
- * Client detail (profile + ITR/GST filings) is NOT in this screen — rows are
- * inert pending a stack route, which the current NativeTabs-only layout has
- * no place for yet.
+ * Lives at src/app/clients/index.tsx. The `clients` directory carries its own
+ * <Stack /> layout, which is the documented way to push screens from inside a
+ * native tab. Rows push /clients/[clientId].
  */
 export default function ClientsScreen() {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
+  const router = useRouter();
   const { session } = useAuth();
   const userId = session?.user?.id ?? '';
 
@@ -59,6 +56,7 @@ export default function ClientsScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <Stack.Screen options={{ headerShown: false, title: 'Clients' }} />
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={styles.content}
@@ -95,7 +93,13 @@ export default function ClientsScreen() {
           ) : (
             <View style={styles.list}>
               {clients.map((entry) => (
-                <ClientRow key={entry.clientId} entry={entry} />
+                <ClientRow
+                  key={entry.clientId}
+                  entry={entry}
+                  onPress={() =>
+                    router.push({ pathname: '/clients/[clientId]', params: { clientId: entry.clientId } })
+                  }
+                />
               ))}
             </View>
           )}
