@@ -116,7 +116,7 @@ function daysBetween(a: Date, b: Date): number {
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** GST period stored as MMYYYY ("042025") → "Apr 2025"; anything else passed through untouched. */
-function formatPeriod(period: string): string {
+export function formatPeriod(period: string): string {
   if (!/^\d{6}$/.test(period)) return period;
   const m = Number(period.slice(0, 2));
   if (m < 1 || m > 12) return period;

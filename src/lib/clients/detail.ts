@@ -1,0 +1,173 @@
+import { supabase } from '@/lib/supabase';
+
+/**
+ * Client detail data layer — read-only.
+ *
+ * Ports only the CA-relevant slice of the web ClientProfileView: profile
+ * header, connection info, ITR filings, GST filings. Portfolio / goals /
+ * insurance / CFP / recommendations are RIA-CFP persona and out of v1 scope.
+ *
+ * Filings are filtered `professional_id` + `client_id`, matching web. RLS on
+ * both filing tables is policy-verified (qual is row-level), so this narrower
+ * query shape cannot behave differently from CA Home's batch fetch.
+ *
+ * No amounts are read. gst_filings carries money inside jsonb columns
+ * (tax_liability, itc_data, b2c_summary, b2b_invoices) whose unit is not yet
+ * proven against real row arithmetic. Money gets its own verification pass.
+ */
+export interface ClientProfile {
+  clientId: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  designation: string | null;
+}
+
+export interface ClientConnection {
+  status: string;
+  serviceType: string;
+  connectedAt: string | null;
+}
+
+export interface ItrFilingEntry {
+  id: string;
+  itrType: string;
+  assessmentYear: string;
+  status: string;
+  dueDate: string | null;
+  filedDate: string | null;
+  pan: string | null;
+  acknowledgementNumber: string | null;
+}
+
+export interface GstFilingEntry {
+  id: string;
+  gstin: string;
+  returnType: string;
+  period: string;
+  status: string;
+  dueDate: string | null;
+  filedDate: string | null;
+  acknowledgementNumber: string | null;
+}
+
+export interface ClientDetail {
+  profile: ClientProfile;
+  connection: ClientConnection | null;
+  itrFilings: ItrFilingEntry[];
+  gstFilings: GstFilingEntry[];
+}
+
+export async function fetchClientDetail(userId: string, clientId: string): Promise<ClientDetail> {
+  const [profileRes, connRes, itrRes, gstRes] = await Promise.all([
+    supabase
+      .from('public_profiles')
+      .select('user_id, name, city, state, designation')
+      .eq('user_id', clientId)
+      .maybeSingle(),
+    supabase
+      .from('connections')
+      .select('status, service_type, connected_at, created_at')
+      .eq('professional_id', userId)
+      .eq('client_id', clientId)
+      .eq('service_type', 'CA')
+      .eq('status', 'ACTIVE')
+      .maybeSingle(),
+    supabase
+      .from('itr_filings')
+      .select('id, itr_type, assessment_year, status, due_date, filed_date, pan, acknowledgement_number')
+      .eq('professional_id', userId)
+      .eq('client_id', clientId),
+    supabase
+      .from('gst_filings')
+      .select('id, gstin, return_type, period, status, due_date, filed_date, acknowledgement_number')
+      .eq('professional_id', userId)
+      .eq('client_id', clientId),
+  ]);
+
+  if (profileRes.error) throw profileRes.error;
+  if (itrRes.error) throw itrRes.error;
+  if (gstRes.error) throw gstRes.error;
+
+  const p = profileRes.data as {
+    user_id: string;
+    name: string | null;
+    city: string | null;
+    state: string | null;
+    designation: string | null;
+  } | null;
+
+  const conn = connRes.data as {
+    status: string;
+    service_type: string;
+    connected_at: string | null;
+    created_at: string | null;
+  } | null;
+
+  const itrRows = (itrRes.data ?? []) as {
+    id: string;
+    itr_type: string;
+    assessment_year: string;
+    status: string | null;
+    due_date: string | null;
+    filed_date: string | null;
+    pan: string | null;
+    acknowledgement_number: string | null;
+  }[];
+
+  const gstRows = (gstRes.data ?? []) as {
+    id: string;
+    gstin: string;
+    return_type: string;
+    period: string;
+    status: string | null;
+    due_date: string | null;
+    filed_date: string | null;
+    acknowledgement_number: string | null;
+  }[];
+
+  const itrFilings: ItrFilingEntry[] = itrRows
+    .map((r) => ({
+      id: r.id,
+      itrType: r.itr_type,
+      assessmentYear: r.assessment_year,
+      status: r.status ?? 'not_started',
+      dueDate: r.due_date,
+      filedDate: r.filed_date,
+      pan: r.pan,
+      acknowledgementNumber: r.acknowledgement_number,
+    }))
+    .sort((a, b) => b.assessmentYear.localeCompare(a.assessmentYear));
+
+  const gstFilings: GstFilingEntry[] = gstRows
+    .map((r) => ({
+      id: r.id,
+      gstin: r.gstin,
+      returnType: r.return_type,
+      period: r.period,
+      status: r.status ?? 'not_started',
+      dueDate: r.due_date,
+      filedDate: r.filed_date,
+      acknowledgementNumber: r.acknowledgement_number,
+    }))
+    .sort((a, b) => (b.dueDate ?? '').localeCompare(a.dueDate ?? ''));
+
+  return {
+    profile: {
+      clientId,
+      name: p?.name || 'Unknown client',
+      city: p?.city ?? null,
+      state: p?.state ?? null,
+      designation: p?.designation ?? null,
+    },
+    connection: conn
+      ? {
+          status: conn.status,
+          serviceType: conn.service_type,
+          connectedAt: conn.connected_at ?? conn.created_at ?? null,
+        }
+      : null,
+    itrFilings,
+    gstFilings,
+  };
+}

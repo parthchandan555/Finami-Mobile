@@ -48,7 +48,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 48,
-    lineHeight: 52,
+    // 1.25 ratio. At the previous 52 (1.08) Plus Jakarta Sans descenders
+    // clipped — the `y` in "Aditya Sharma" was cut off. Any lineHeight in
+    // this ladder must stay at or above ~1.2x fontSize for this typeface.
+    lineHeight: 60,
     fontFamily: FontFamily.bold,
   },
   subtitle: {
