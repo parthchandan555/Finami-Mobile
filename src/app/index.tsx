@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -66,6 +66,30 @@ export default function CaHomeScreen() {
     load();
   }, [load]);
 
+  // Triage rows carry only a destination slug, never a client id, so a press
+  // cannot yet open a specific record. Surfacing that honestly beats an inert
+  // tap. Adding `clientId` to TriageItem is the next slice.
+  const handleNavigate = useCallback((href: string) => {
+    const label =
+      href === 'clients'
+        ? 'Clients'
+        : href === 'itr-generation'
+          ? 'ITR filings'
+          : href === 'gst-module'
+            ? 'GST returns'
+            : href === 'documents'
+              ? 'Documents'
+              : href === 'invoicing'
+                ? 'Invoices'
+                : href;
+    Alert.alert(
+      label,
+      href === 'clients'
+        ? 'Open the Clients tab to see your active clients.'
+        : 'This screen is not built yet.',
+    );
+  }, []);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     load();
@@ -112,7 +136,7 @@ export default function CaHomeScreen() {
               <AttentionQueue
                 items={items}
                 trueTotal={trueTotal}
-                onNavigate={() => {}}
+                onNavigate={handleNavigate}
                 emptyState={
                   <View style={styles.empty}>
                     <ThemedText type="smallBold">All clear.</ThemedText>
