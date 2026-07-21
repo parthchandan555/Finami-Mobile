@@ -44,3 +44,4 @@ example
 .idea/
 .env
 apply_*.sh
+HOME_STACK_SPEC.md

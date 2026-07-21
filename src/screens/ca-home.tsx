@@ -13,7 +13,6 @@ import {
   computeCaTriage,
   type CaNextDeadline,
 } from '@/lib/ca-home/rules/ca';
-import { router } from 'expo-router';
 import type { HorizonDay, TriageItem } from '@/lib/ca-home/types';
 
 import { AttentionQueue } from '@/features/ca-home/AttentionQueue';
@@ -28,7 +27,13 @@ import { ZoneSection } from '@/features/ca-home/ZoneSection';
  * emit; mobile screens for those do not exist yet, so presses are inert
  * for now (deliberate — client list / filing detail are the next slice).
  */
-export default function CaHomeScreen() {
+export default function CaHomeScreen({
+  onOpenQueue,
+  onOpenClient,
+}: {
+  onOpenQueue: () => void;
+  onOpenClient: (clientId: string) => void;
+}) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
   const { session, signOut } = useAuth();
@@ -70,35 +75,38 @@ export default function CaHomeScreen() {
   // Items carrying a clientId push client detail. CA-6 (pending connections)
   // deliberately has none: a PENDING connection resolves no name and no
   // detail row, so the labelled Alert stays for it.
-  const handleNavigate = useCallback((target: TriageItem | string) => {
-    if (target === 'compliance-calendar') {
-      router.push({ pathname: '/clients/queue' });
-      return;
-    }
-    if (typeof target !== 'string' && target.clientId) {
-      router.push({ pathname: '/clients/[clientId]', params: { clientId: target.clientId } });
-      return;
-    }
-    const href = typeof target === 'string' ? target : target.href;
-    const label =
-      href === 'clients'
-        ? 'Clients'
-        : href === 'itr-generation'
-          ? 'ITR filings'
-          : href === 'gst-module'
-            ? 'GST returns'
-            : href === 'documents'
-              ? 'Documents'
-              : href === 'invoicing'
-                ? 'Invoices'
-                : href;
-    Alert.alert(
-      label,
-      href === 'clients'
-        ? 'Open the Clients tab to see your active clients.'
-        : 'This screen is not built yet.',
-    );
-  }, []);
+  const handleNavigate = useCallback(
+    (target: TriageItem | string) => {
+      if (target === 'compliance-calendar') {
+        onOpenQueue();
+        return;
+      }
+      if (typeof target !== 'string' && target.clientId) {
+        onOpenClient(target.clientId);
+        return;
+      }
+      const href = typeof target === 'string' ? target : target.href;
+      const label =
+        href === 'clients'
+          ? 'Clients'
+          : href === 'itr-generation'
+            ? 'ITR filings'
+            : href === 'gst-module'
+              ? 'GST returns'
+              : href === 'documents'
+                ? 'Documents'
+                : href === 'invoicing'
+                  ? 'Invoices'
+                  : href;
+      Alert.alert(
+        label,
+        href === 'clients'
+          ? 'Open the Clients tab to see your active clients.'
+          : 'This screen is not built yet.',
+      );
+    },
+    [onOpenQueue, onOpenClient],
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
