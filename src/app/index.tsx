@@ -13,6 +13,7 @@ import {
   computeCaTriage,
   type CaNextDeadline,
 } from '@/lib/ca-home/rules/ca';
+import { router } from 'expo-router';
 import type { HorizonDay, TriageItem } from '@/lib/ca-home/types';
 
 import { AttentionQueue } from '@/features/ca-home/AttentionQueue';
@@ -66,10 +67,15 @@ export default function CaHomeScreen() {
     load();
   }, [load]);
 
-  // Triage rows carry only a destination slug, never a client id, so a press
-  // cannot yet open a specific record. Surfacing that honestly beats an inert
-  // tap. Adding `clientId` to TriageItem is the next slice.
-  const handleNavigate = useCallback((href: string) => {
+  // Items carrying a clientId push client detail. CA-6 (pending connections)
+  // deliberately has none: a PENDING connection resolves no name and no
+  // detail row, so the labelled Alert stays for it.
+  const handleNavigate = useCallback((target: TriageItem | string) => {
+    if (typeof target !== 'string' && target.clientId) {
+      router.push({ pathname: '/clients/[clientId]', params: { clientId: target.clientId } });
+      return;
+    }
+    const href = typeof target === 'string' ? target : target.href;
     const label =
       href === 'clients'
         ? 'Clients'

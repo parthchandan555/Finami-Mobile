@@ -172,6 +172,7 @@ export function computeCaTriage(data: CaTriageInput, today: Date): TriageItem[] 
         whyLine: `AY ${f.assessment_year} · overdue ${Math.abs(diff)} days`,
         chipLabel: dayChipLabel(diff),
         href: "itr-generation",
+        clientId: f.client_id,
         sortValue: due.getTime(),
         createdAt: f.created_at,
       });
@@ -184,6 +185,7 @@ export function computeCaTriage(data: CaTriageInput, today: Date): TriageItem[] 
         whyLine: `AY ${f.assessment_year} · due ${formatShortDate(due)}`,
         chipLabel: dayChipLabel(diff),
         href: "itr-generation",
+        clientId: f.client_id,
         sortValue: due.getTime(),
         createdAt: f.created_at,
       });
@@ -205,6 +207,7 @@ export function computeCaTriage(data: CaTriageInput, today: Date): TriageItem[] 
         whyLine: `${formatPeriod(f.period)} · overdue ${Math.abs(diff)} days`,
         chipLabel: dayChipLabel(diff),
         href: "gst-module",
+        clientId: f.client_id,
         sortValue: due.getTime(),
         createdAt: f.created_at,
       });
@@ -217,6 +220,7 @@ export function computeCaTriage(data: CaTriageInput, today: Date): TriageItem[] 
         whyLine: `${formatPeriod(f.period)} · due ${formatShortDate(due)}`,
         chipLabel: dayChipLabel(diff),
         href: "gst-module",
+        clientId: f.client_id,
         sortValue: due.getTime(),
         createdAt: f.created_at,
       });
@@ -236,6 +240,7 @@ export function computeCaTriage(data: CaTriageInput, today: Date): TriageItem[] 
       whyLine: `${name} uploaded ${doc.file_name} ${elapsedLabel(doc.created_at, today)}`,
       chipLabel: elapsedChipLabel(elapsed),
       href: "documents",
+      clientId: doc.client_id,
       sortValue: new Date(doc.created_at).getTime(),
       createdAt: doc.created_at,
     });
@@ -278,6 +283,7 @@ export function computeCaTriage(data: CaTriageInput, today: Date): TriageItem[] 
       whyLine: `Invoice ${inv.invoice_number} · ${formatINR(inv.total / 100)} unpaid ${Math.max(0, -diff)} days past due`,
       chipLabel: dayChipLabel(diff),
       href: "invoicing",
+      clientId: inv.client_id,
       sortValue: due.getTime(),
       createdAt: inv.created_at,
     });

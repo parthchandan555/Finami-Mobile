@@ -22,7 +22,7 @@ export function AttentionQueue({
 }: {
   items: TriageItem[];
   trueTotal?: number;
-  onNavigate: (href: string) => void;
+  onNavigate: (target: TriageItem | string) => void;
   emptyState: React.ReactNode;
   maxRows?: number;
 }) {

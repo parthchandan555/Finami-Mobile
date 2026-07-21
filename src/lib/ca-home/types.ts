@@ -21,6 +21,8 @@ export interface TriageItem {
   whyLine: string;
   /** "4d" / "OVERDUE 3d" / "TODAY" — omitted when the item has no date */
   chipLabel?: string;
+  /** Target client for a tap. Omitted when no viewable client detail exists (CA-6). */
+  clientId?: string;
   /** Page slug resolved by the caller at press time */
   href: string;
   /** Ascending = higher priority within the tier (spec's "sort key") */
