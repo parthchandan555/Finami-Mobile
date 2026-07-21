@@ -116,9 +116,9 @@ export default function FilingDetailScreen() {
                 <Row label="Status" value={prettyStatus(itr.status)} />
                 {itr.dueDate ? <Row label="Due date" value={prettyDate(itr.dueDate) ?? '—'} /> : null}
                 {itr.filedDate ? <Row label="Filed date" value={prettyDate(itr.filedDate) ?? '—'} /> : null}
-                {itr.pan ? <Row label="PAN" value={itr.pan} /> : null}
+                {itr.pan ? <Row label="PAN" value={itr.pan} stacked /> : null}
                 {itr.acknowledgementNumber ? (
-                  <Row label="Acknowledgement no." value={itr.acknowledgementNumber} />
+                  <Row label="Acknowledgement no." value={itr.acknowledgementNumber} stacked />
                 ) : null}
                 {itr.updatedAt ? (
                   <Row label="Last updated" value={prettyDateTime(itr.updatedAt) ?? '—'} />
@@ -138,9 +138,9 @@ export default function FilingDetailScreen() {
                 <Row label="Status" value={prettyStatus(gst.status)} />
                 {gst.dueDate ? <Row label="Due date" value={prettyDate(gst.dueDate) ?? '—'} /> : null}
                 {gst.filedDate ? <Row label="Filed date" value={prettyDate(gst.filedDate) ?? '—'} /> : null}
-                <Row label="GSTIN" value={gst.gstin} />
+                <Row label="GSTIN" value={gst.gstin} stacked />
                 {gst.acknowledgementNumber ? (
-                  <Row label="Acknowledgement no." value={gst.acknowledgementNumber} />
+                  <Row label="Acknowledgement no." value={gst.acknowledgementNumber} stacked />
                 ) : null}
                 {gst.updatedAt ? (
                   <Row label="Last updated" value={prettyDateTime(gst.updatedAt) ?? '—'} />
@@ -154,11 +154,21 @@ export default function FilingDetailScreen() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  stacked,
+}: {
+  label: string;
+  value: string;
+  stacked?: boolean;
+}) {
   return (
-    <View style={styles.row}>
+    <View style={stacked ? styles.stackedRow : styles.row}>
       <ThemedText type="small">{label}</ThemedText>
-      <ThemedText type="smallBold">{value}</ThemedText>
+      <ThemedText type="smallBold" style={stacked ? undefined : styles.rowValue}>
+        {value}
+      </ThemedText>
     </View>
   );
 }
@@ -174,6 +184,13 @@ const styles = StyleSheet.create({
   },
   header: { gap: 2 },
   card: { borderRadius: Spacing.two, padding: Spacing.three, gap: Spacing.two },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  rowValue: { flexShrink: 1, textAlign: 'right' },
+  stackedRow: { gap: 2 },
   errorBox: { borderRadius: Spacing.two, padding: Spacing.three, gap: Spacing.two },
 });
