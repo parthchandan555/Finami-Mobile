@@ -71,6 +71,10 @@ export default function CaHomeScreen() {
   // deliberately has none: a PENDING connection resolves no name and no
   // detail row, so the labelled Alert stays for it.
   const handleNavigate = useCallback((target: TriageItem | string) => {
+    if (target === 'compliance-calendar') {
+      router.push({ pathname: '/clients/queue' });
+      return;
+    }
     if (typeof target !== 'string' && target.clientId) {
       router.push({ pathname: '/clients/[clientId]', params: { clientId: target.clientId } });
       return;
