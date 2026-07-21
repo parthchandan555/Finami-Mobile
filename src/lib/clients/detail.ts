@@ -38,6 +38,7 @@ export interface ItrFilingEntry {
   filedDate: string | null;
   pan: string | null;
   acknowledgementNumber: string | null;
+  updatedAt: string | null;
 }
 
 export interface GstFilingEntry {
@@ -49,6 +50,7 @@ export interface GstFilingEntry {
   dueDate: string | null;
   filedDate: string | null;
   acknowledgementNumber: string | null;
+  updatedAt: string | null;
 }
 
 export interface ClientDetail {
@@ -75,12 +77,12 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       .maybeSingle(),
     supabase
       .from('itr_filings')
-      .select('id, itr_type, assessment_year, status, due_date, filed_date, pan, acknowledgement_number')
+      .select('id, itr_type, assessment_year, status, due_date, filed_date, pan, acknowledgement_number, updated_at')
       .eq('professional_id', userId)
       .eq('client_id', clientId),
     supabase
       .from('gst_filings')
-      .select('id, gstin, return_type, period, status, due_date, filed_date, acknowledgement_number')
+      .select('id, gstin, return_type, period, status, due_date, filed_date, acknowledgement_number, updated_at')
       .eq('professional_id', userId)
       .eq('client_id', clientId),
   ]);
@@ -113,6 +115,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
     filed_date: string | null;
     pan: string | null;
     acknowledgement_number: string | null;
+    updated_at: string | null;
   }[];
 
   const gstRows = (gstRes.data ?? []) as {
@@ -124,6 +127,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
     due_date: string | null;
     filed_date: string | null;
     acknowledgement_number: string | null;
+    updated_at: string | null;
   }[];
 
   const itrFilings: ItrFilingEntry[] = itrRows
@@ -136,6 +140,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       filedDate: r.filed_date,
       pan: r.pan,
       acknowledgementNumber: r.acknowledgement_number,
+      updatedAt: r.updated_at,
     }))
     .sort((a, b) => b.assessmentYear.localeCompare(a.assessmentYear));
 
@@ -149,6 +154,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       dueDate: r.due_date,
       filedDate: r.filed_date,
       acknowledgementNumber: r.acknowledgement_number,
+      updatedAt: r.updated_at,
     }))
     .sort((a, b) => (b.dueDate ?? '').localeCompare(a.dueDate ?? ''));
 

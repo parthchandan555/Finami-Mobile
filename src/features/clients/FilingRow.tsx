@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
@@ -7,7 +7,8 @@ import { Colors, FontFamily, Spacing } from '@/constants/theme';
 export type FilingTone = 'done' | 'overdue' | 'open';
 
 /**
- * One filing row. Read-only, not pressable — filing detail is not built.
+ * One filing row. Pressable when `onPress` is provided; otherwise inert,
+ * matching prior behaviour exactly.
  * Palette keys used here are all proven in shipped code (CA Home's TriageRow
  * and HorizonStrip already compile against accent / accentTint / destructive /
  * destructiveTint). No icons, matching the rest of the app.
@@ -18,12 +19,14 @@ export function FilingRow({
   statusLabel,
   tone,
   footer,
+  onPress,
 }: {
   title: string;
   subtitle: string;
   statusLabel: string;
   tone: FilingTone;
   footer?: string | null;
+  onPress?: () => void;
 }) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
@@ -36,7 +39,11 @@ export function FilingRow({
         : { bg: c.accentTint, fg: c.accent };
 
   return (
-    <View style={[styles.row, { backgroundColor: c.backgroundElement }]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={[styles.row, { backgroundColor: c.backgroundElement }]}
+    >
       <View style={styles.body}>
         <ThemedText type="smallBold" numberOfLines={1}>{title}</ThemedText>
         <ThemedText type="small" numberOfLines={2}>{subtitle}</ThemedText>
@@ -47,7 +54,7 @@ export function FilingRow({
           {statusLabel}
         </ThemedText>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

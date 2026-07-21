@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -151,6 +151,12 @@ export default function ClientDetailScreen() {
                         statusLabel={prettyStatus(f.status)}
                         tone={toneFor(f.status, f.dueDate, ITR_TERMINAL)}
                         footer={f.acknowledgementNumber ? `Ack ${f.acknowledgementNumber}` : null}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/clients/filing',
+                            params: { clientId, filingId: f.id, kind: 'itr' },
+                          })
+                        }
                       />
                     ))}
                   </View>
@@ -180,6 +186,12 @@ export default function ClientDetailScreen() {
                         statusLabel={prettyStatus(f.status)}
                         tone={toneFor(f.status, f.dueDate, GST_TERMINAL)}
                         footer={f.acknowledgementNumber ? `Ack ${f.acknowledgementNumber}` : null}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/clients/filing',
+                            params: { clientId, filingId: f.id, kind: 'gst' },
+                          })
+                        }
                       />
                     ))}
                   </View>
