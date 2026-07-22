@@ -2,6 +2,7 @@ import { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { registerForPushNotifications } from '@/lib/notifications/register';
 
 type AuthContextType = {
   session: Session | null;
@@ -31,6 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      void registerForPushNotifications(session.user.id);
+    }
+  }, [session?.user?.id]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
