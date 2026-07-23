@@ -3,7 +3,7 @@ import { PlusJakartaSans_400Regular } from '@expo-google-fonts/plus-jakarta-sans
 import { PlusJakartaSans_500Medium } from '@expo-google-fonts/plus-jakarta-sans/500Medium';
 import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
 import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider, router, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import React from 'react';
@@ -27,6 +27,22 @@ Notifications.setNotificationHandler({
 
 function Gate() {
   const { session, loading } = useAuth();
+  const rootNavigationState = useRootNavigationState();
+
+  React.useEffect(() => {
+    if (!session || !rootNavigationState?.key) return;
+
+    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+      router.push({ pathname: '/notifications' });
+    });
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) router.push({ pathname: '/notifications' });
+    });
+
+    return () => sub.remove();
+  }, [session, rootNavigationState?.key]);
+
   if (loading) return null;
   if (!session) return <LoginScreen />;
   return <AppTabs />;
