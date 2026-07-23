@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -7,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { fetchCaHomeData, type CaHomeData } from '@/lib/ca-home/data';
+import { fetchNotifications } from '@/lib/notifications/list';
 import {
   computeCaHorizon,
   computeCaNextDeadline,
@@ -30,9 +33,11 @@ import { ZoneSection } from '@/features/ca-home/ZoneSection';
 export default function CaHomeScreen({
   onOpenQueue,
   onOpenClient,
+  onOpenNotifications,
 }: {
   onOpenQueue: () => void;
   onOpenClient: (clientId: string) => void;
+  onOpenNotifications: () => void;
 }) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
@@ -46,6 +51,7 @@ export default function CaHomeScreen({
   const [items, setItems] = useState<TriageItem[]>([]);
   const [horizon, setHorizon] = useState<HorizonDay[]>([]);
   const [nextDeadline, setNextDeadline] = useState<CaNextDeadline | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -65,6 +71,20 @@ export default function CaHomeScreen({
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+
+    // Unread-count sync — isolated try/catch so a notifications failure
+    // never blocks Home. Also mirrors the count onto the OS app-icon badge.
+    // That badge only reflects reality when the app is opened/foregrounded:
+    // no push send-path exists yet (item 18), so it is NOT updated live in
+    // the background the way a delivered push notification's badge would be.
+    try {
+      const notes = await fetchNotifications(userId);
+      const unread = notes.filter((n) => !n.isRead).length;
+      setUnreadCount(unread);
+      await Notifications.setBadgeCountAsync(unread);
+    } catch {
+      // Non-fatal — Home's own data already rendered above.
     }
   }, [userId]);
 
@@ -125,17 +145,38 @@ export default function CaHomeScreen({
         >
           <View style={styles.headerRow}>
             <ThemedText type="title">Home</ThemedText>
-            <Pressable
-              onPress={signOut}
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
-              style={({ pressed }) => [
-                styles.signOut,
-                { backgroundColor: pressed ? c.backgroundSelected : c.backgroundElement },
-              ]}
-            >
-              <ThemedText type="smallBold">Sign out</ThemedText>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={onOpenNotifications}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.iconButton}
+              >
+                <SymbolView
+                  name={{ ios: 'bell.fill', android: 'notifications', web: 'notifications' }}
+                  size={22}
+                  tintColor={c.text}
+                />
+                {unreadCount > 0 ? (
+                  <View style={[styles.badge, { backgroundColor: c.accent }]}>
+                    <ThemedText style={styles.badgeText}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </Pressable>
+              <Pressable
+                onPress={signOut}
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
+                style={({ pressed }) => [styles.signOut, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                <ThemedText type="smallBold">Sign out</ThemedText>
+              </Pressable>
+            </View>
           </View>
 
           {loading ? (
@@ -228,10 +269,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: Spacing.two,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  iconButton: {
+    paddingHorizontal: Spacing.one,
+    paddingVertical: Spacing.one,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    lineHeight: 12,
+  },
   signOut: {
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.one,
+    paddingVertical: Spacing.one,
   },
   empty: { gap: Spacing.one },
   errorBox: { borderRadius: Spacing.two, padding: Spacing.three, gap: Spacing.two },
