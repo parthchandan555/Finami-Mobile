@@ -7,6 +7,7 @@ export default function HomeRoute() {
     <CaHomeScreen
       onOpenQueue={() => router.push({ pathname: '/queue' })}
       onOpenClient={(clientId) => router.push({ pathname: '/client/[clientId]', params: { clientId } })}
+      onOpenNotifications={() => router.push({ pathname: '/notifications' })}
     />
   );
 }
