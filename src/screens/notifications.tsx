@@ -1,22 +1,30 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { fetchNotifications, type NotificationEntry } from '@/lib/notifications/list';
+import { markAllNotificationsRead } from '@/lib/notifications/mark-read';
 
 import { NotificationRow } from '@/features/notifications/NotificationRow';
 
 /**
- * In-app notification list — read-only, user-scoped inbox (no service_type
- * filter, unlike the CA surfaces: testpro1 sees both CA and RA
- * notifications here). No tap-to-navigate in v1 — that's the deferred
- * deep-link feature, which needs the push send-path designed first.
- * Mark-as-read is a deferred write (v1.1).
+ * In-app notification list — user-scoped inbox (no service_type filter,
+ * unlike the CA surfaces: testpro1 sees both CA and RA notifications here).
+ *
+ * Rows still carry no press handler. Record-level deep linking is blocked on
+ * the web repo, which writes only section-level paths into
+ * `notifications.link` and leaves `data` empty; adding a tap now would read
+ * as navigation and have to be re-taught later.
+ *
+ * "Mark all read" is THE ONLY mobile write to a business table in v1 — a
+ * deliberate, named break in the read-only-except-auth rule. It goes through
+ * a SECURITY DEFINER RPC, never a direct table update. See mark-read.ts.
  */
 export default function NotificationsScreen() {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
@@ -28,6 +36,8 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<NotificationEntry[]>([]);
+  const [marking, setMarking] = useState(false);
+  const [markError, setMarkError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -53,6 +63,26 @@ export default function NotificationsScreen() {
     setRefreshing(true);
     load();
   }, [load]);
+
+  const onMarkAllRead = useCallback(async () => {
+    if (marking) return;
+    setMarking(true);
+    setMarkError(null);
+    try {
+      await markAllNotificationsRead();
+      setItems((prev) => prev.map((i) => (i.isRead ? i : { ...i, isRead: true })));
+      try {
+        await Notifications.setBadgeCountAsync(0);
+      } catch {
+        // The app-icon badge is cosmetic. A failure here must never surface
+        // as a failed mark-as-read, which has already committed.
+      }
+    } catch (e) {
+      setMarkError(e instanceof Error ? e.message : 'Could not mark them read.');
+    } finally {
+      setMarking(false);
+    }
+  }, [marking]);
 
   const unreadCount = items.filter((i) => !i.isRead).length;
 
@@ -82,9 +112,30 @@ export default function NotificationsScreen() {
           ) : (
             <>
               <View style={styles.block}>
-                <ThemedText type="smallBold">
-                  {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
-                </ThemedText>
+                <View style={styles.headerRow}>
+                  <ThemedText type="smallBold">
+                    {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+                  </ThemedText>
+                  {unreadCount > 0 ? (
+                    <Pressable
+                      onPress={onMarkAllRead}
+                      disabled={marking}
+                      accessibilityRole="button"
+                      accessibilityLabel="Mark all notifications read"
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={({ pressed }) => ({ opacity: pressed || marking ? 0.6 : 1 })}
+                    >
+                      <ThemedText type="smallBold" themeColor="accent">
+                        {marking ? 'Marking…' : 'Mark all read'}
+                      </ThemedText>
+                    </Pressable>
+                  ) : null}
+                </View>
+                {markError ? (
+                  <ThemedText type="small" themeColor="destructive">
+                    {markError}
+                  </ThemedText>
+                ) : null}
               </View>
               <View style={styles.list}>
                 {items.map((item) => (
@@ -111,5 +162,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   block: { gap: Spacing.one },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
   list: { gap: Spacing.two },
 });
