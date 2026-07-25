@@ -26,7 +26,11 @@ import { NotificationRow } from '@/features/notifications/NotificationRow';
  * deliberate, named break in the read-only-except-auth rule. It goes through
  * a SECURITY DEFINER RPC, never a direct table update. See mark-read.ts.
  */
-export default function NotificationsScreen() {
+export default function NotificationsScreen({
+  onOpenClient,
+}: {
+  onOpenClient?: (clientId: string) => void;
+} = {}) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
   const { session } = useAuth();
@@ -86,6 +90,15 @@ export default function NotificationsScreen() {
 
   const unreadCount = items.filter((i) => !i.isRead).length;
 
+  const onRowPress = useCallback(
+    (item: NotificationEntry) => {
+      if (item.target?.kind === 'client' && onOpenClient) {
+        onOpenClient(item.target.clientId);
+      }
+    },
+    [onOpenClient],
+  );
+
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ title: 'Notifications' }} />
@@ -139,7 +152,7 @@ export default function NotificationsScreen() {
               </View>
               <View style={styles.list}>
                 {items.map((item) => (
-                  <NotificationRow key={item.id} item={item} />
+                  <NotificationRow key={item.id} item={item} onPress={onRowPress} />
                 ))}
               </View>
             </>
