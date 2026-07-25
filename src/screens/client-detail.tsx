@@ -112,15 +112,6 @@ export default function ClientDetailScreen({
             </View>
           ) : detail ? (
             <>
-              {detail.profile.designation || place ? (
-                <View style={styles.header}>
-                  {detail.profile.designation ? (
-                    <ThemedText type="small">{detail.profile.designation}</ThemedText>
-                  ) : null}
-                  {place ? <ThemedText type="small">{place}</ThemedText> : null}
-                </View>
-              ) : null}
-
               <View style={styles.section}>
                 <View style={styles.sectionHead}>
                   <ThemedText type="subtitle">ITR filings</ThemedText>
@@ -191,6 +182,10 @@ export default function ClientDetailScreen({
                 {connectedOn ? <ThemedText type="small">Connected {connectedOn}</ThemedText> : null}
                 {pan ? <ThemedText type="small">PAN {pan}</ThemedText> : null}
                 {gstin ? <ThemedText type="small">GSTIN {gstin}</ThemedText> : null}
+                {detail.profile.designation ? (
+                  <ThemedText type="small">{detail.profile.designation}</ThemedText>
+                ) : null}
+                {place ? <ThemedText type="small">{place}</ThemedText> : null}
               </View>
             </>
           ) : null}
@@ -209,7 +204,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     gap: Spacing.four,
   },
-  header: { gap: 2 },
   card: { borderRadius: Spacing.two, padding: Spacing.three, gap: Spacing.one },
   section: { gap: Spacing.two },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
