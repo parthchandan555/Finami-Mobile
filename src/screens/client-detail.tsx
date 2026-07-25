@@ -112,27 +112,6 @@ export default function ClientDetailScreen({
             </View>
           ) : detail ? (
             <>
-              {detail.profile.designation || place ? (
-                <View style={styles.header}>
-                  {detail.profile.designation ? (
-                    <ThemedText type="small">{detail.profile.designation}</ThemedText>
-                  ) : null}
-                  {place ? <ThemedText type="small">{place}</ThemedText> : null}
-                </View>
-              ) : null}
-
-              <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
-                <ThemedText type="smallBold">Connection</ThemedText>
-                <ThemedText type="small">
-                  {detail.connection
-                    ? `${detail.connection.serviceType} · ${prettyStatus(detail.connection.status)}`
-                    : 'No active CA connection'}
-                </ThemedText>
-                {connectedOn ? <ThemedText type="small">Connected {connectedOn}</ThemedText> : null}
-                {pan ? <ThemedText type="small">PAN {pan}</ThemedText> : null}
-                {gstin ? <ThemedText type="small">GSTIN {gstin}</ThemedText> : null}
-              </View>
-
               <View style={styles.section}>
                 <View style={styles.sectionHead}>
                   <ThemedText type="subtitle">ITR filings</ThemedText>
@@ -192,6 +171,22 @@ export default function ClientDetailScreen({
                   </View>
                 )}
               </View>
+
+              <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
+                <ThemedText type="smallBold">Connection</ThemedText>
+                <ThemedText type="small">
+                  {detail.connection
+                    ? `${detail.connection.serviceType} · ${prettyStatus(detail.connection.status)}`
+                    : 'No active CA connection'}
+                </ThemedText>
+                {connectedOn ? <ThemedText type="small">Connected {connectedOn}</ThemedText> : null}
+                {pan ? <ThemedText type="small">PAN {pan}</ThemedText> : null}
+                {gstin ? <ThemedText type="small">GSTIN {gstin}</ThemedText> : null}
+                {detail.profile.designation ? (
+                  <ThemedText type="small">{detail.profile.designation}</ThemedText>
+                ) : null}
+                {place ? <ThemedText type="small">{place}</ThemedText> : null}
+              </View>
             </>
           ) : null}
         </ScrollView>
@@ -209,7 +204,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     gap: Spacing.four,
   },
-  header: { gap: 2 },
   card: { borderRadius: Spacing.two, padding: Spacing.three, gap: Spacing.one },
   section: { gap: Spacing.two },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
