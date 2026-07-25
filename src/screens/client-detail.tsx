@@ -121,18 +121,6 @@ export default function ClientDetailScreen({
                 </View>
               ) : null}
 
-              <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
-                <ThemedText type="smallBold">Connection</ThemedText>
-                <ThemedText type="small">
-                  {detail.connection
-                    ? `${detail.connection.serviceType} · ${prettyStatus(detail.connection.status)}`
-                    : 'No active CA connection'}
-                </ThemedText>
-                {connectedOn ? <ThemedText type="small">Connected {connectedOn}</ThemedText> : null}
-                {pan ? <ThemedText type="small">PAN {pan}</ThemedText> : null}
-                {gstin ? <ThemedText type="small">GSTIN {gstin}</ThemedText> : null}
-              </View>
-
               <View style={styles.section}>
                 <View style={styles.sectionHead}>
                   <ThemedText type="subtitle">ITR filings</ThemedText>
@@ -191,6 +179,18 @@ export default function ClientDetailScreen({
                     ))}
                   </View>
                 )}
+              </View>
+
+              <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
+                <ThemedText type="smallBold">Connection</ThemedText>
+                <ThemedText type="small">
+                  {detail.connection
+                    ? `${detail.connection.serviceType} · ${prettyStatus(detail.connection.status)}`
+                    : 'No active CA connection'}
+                </ThemedText>
+                {connectedOn ? <ThemedText type="small">Connected {connectedOn}</ThemedText> : null}
+                {pan ? <ThemedText type="small">PAN {pan}</ThemedText> : null}
+                {gstin ? <ThemedText type="small">GSTIN {gstin}</ThemedText> : null}
               </View>
             </>
           ) : null}

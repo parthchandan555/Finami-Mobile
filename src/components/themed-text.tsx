@@ -15,6 +15,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
     <Text
       style={[
         { color: theme[themeColor ?? 'text'] },
+        styles.noLigatures,
         type === 'default' && styles.default,
         type === 'title' && styles.title,
         type === 'small' && styles.small,
@@ -31,6 +32,9 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
+  noLigatures: {
+    fontVariant: ['no-common-ligatures'],
+  },
   small: {
     fontSize: 14,
     lineHeight: 20,
