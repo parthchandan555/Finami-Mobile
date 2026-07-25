@@ -112,13 +112,14 @@ export default function ClientDetailScreen({
             </View>
           ) : detail ? (
             <>
-              <View style={styles.header}>
-                <ThemedText type="title">{detail.profile.name}</ThemedText>
-                {detail.profile.designation ? (
-                  <ThemedText type="small">{detail.profile.designation}</ThemedText>
-                ) : null}
-                {place ? <ThemedText type="small">{place}</ThemedText> : null}
-              </View>
+              {detail.profile.designation || place ? (
+                <View style={styles.header}>
+                  {detail.profile.designation ? (
+                    <ThemedText type="small">{detail.profile.designation}</ThemedText>
+                  ) : null}
+                  {place ? <ThemedText type="small">{place}</ThemedText> : null}
+                </View>
+              ) : null}
 
               <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
                 <ThemedText type="smallBold">Connection</ThemedText>
