@@ -1,25 +1,36 @@
 import React from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import type { NotificationEntry } from '@/lib/notifications/list';
 
 /**
- * One notification-list row. Read-only — no press handler; tap-to-navigate
- * is a deferred v1.1 feature (`link` is the future deep-link field, not
- * wired here). Unread state is carried by a colored edge bar, mirroring the
+ * One notification-list row. Becomes pressable ONLY when the notification
+ * resolves to a navigation target (v1: a client detail screen, keyed off
+ * `data.client_id`). Rows with no target render exactly as before — no
+ * press handler, no affordance. Routing itself is owned by the caller via
+ * `onPress`; this component holds no path literal. Unread state is carried
+ * by a colored edge bar, mirroring the
  * CA-home tier pattern (TriageRow): unread = accent edge, read = no edge.
  * `message` renders verbatim — some rows carry a pre-formatted rupee amount
  * inside the string; that is display text, NOT a money column, and must
  * never be parsed or reformatted.
  */
-export function NotificationRow({ item }: { item: NotificationEntry }) {
+export function NotificationRow({
+  item,
+  onPress,
+}: {
+  item: NotificationEntry;
+  onPress?: (item: NotificationEntry) => void;
+}) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
 
-  return (
-    <View style={[styles.row, { backgroundColor: c.backgroundElement }]}>
+  const tappable = onPress != null && item.target != null;
+
+  const inner = (
+    <>
       <View style={[styles.edge, { backgroundColor: item.isRead ? 'transparent' : c.accent }]} />
       <View style={styles.body}>
         <ThemedText type="smallBold" numberOfLines={2}>
@@ -30,8 +41,25 @@ export function NotificationRow({ item }: { item: NotificationEntry }) {
         </ThemedText>
         <ThemedText type="small">{formatRelativeTime(item.createdAt)}</ThemedText>
       </View>
-    </View>
+    </>
   );
+
+  if (tappable) {
+    return (
+      <Pressable
+        onPress={() => onPress!(item)}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.row,
+          { backgroundColor: c.backgroundElement, opacity: pressed ? 0.6 : 1 },
+        ]}
+      >
+        {inner}
+      </Pressable>
+    );
+  }
+
+  return <View style={[styles.row, { backgroundColor: c.backgroundElement }]}>{inner}</View>;
 }
 
 /**

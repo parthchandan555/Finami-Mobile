@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { resolveNotificationTarget, type NotificationTarget } from '@/lib/notifications/target';
 
 /**
  * In-app notification list data layer — read-only.
@@ -23,12 +24,14 @@ export interface NotificationEntry {
   /** `is_read` is nullable in the DB; absent is treated as unread. */
   isRead: boolean;
   createdAt: string | null;
+  /** Resolved tap target, or null when this row is not deep-linkable in v1. */
+  target: NotificationTarget | null;
 }
 
 export async function fetchNotifications(userId: string): Promise<NotificationEntry[]> {
   const { data, error } = await supabase
     .from('notifications')
-    .select('id, type, title, message, is_read, created_at')
+    .select('id, type, title, message, is_read, created_at, data')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -41,6 +44,7 @@ export async function fetchNotifications(userId: string): Promise<NotificationEn
     message: string;
     is_read: boolean | null;
     created_at: string | null;
+    data: unknown;
   }[];
 
   return rows.map((r) => ({
@@ -50,5 +54,6 @@ export async function fetchNotifications(userId: string): Promise<NotificationEn
     message: r.message,
     isRead: r.is_read ?? false,
     createdAt: r.created_at ?? null,
+    target: resolveNotificationTarget(r.data),
   }));
 }
