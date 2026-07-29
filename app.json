@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Finami-Mobile",
+    "name": "Finamize",
     "slug": "Finami-Mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,6 @@
     "scheme": "finamimobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.allumerfintech.finamize",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -33,9 +32,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0A84FF",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 220
         }
       ],
       "expo-secure-store",
