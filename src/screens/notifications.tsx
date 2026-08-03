@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
@@ -9,7 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { fetchNotifications, type NotificationEntry } from '@/lib/notifications/list';
-import { markAllNotificationsRead } from '@/lib/notifications/mark-read';
+import { markAllNotificationsRead, markNotificationRead } from '@/lib/notifications/mark-read';
 
 import { NotificationRow } from '@/features/notifications/NotificationRow';
 
@@ -17,14 +17,14 @@ import { NotificationRow } from '@/features/notifications/NotificationRow';
  * In-app notification list — user-scoped inbox (no service_type filter,
  * unlike the CA surfaces: testpro1 sees both CA and RA notifications here).
  *
- * Rows still carry no press handler. Record-level deep linking is blocked on
- * the web repo, which writes only section-level paths into
- * `notifications.link` and leaves `data` empty; adding a tap now would read
- * as navigation and have to be re-taught later.
+ * Tapping a row does up to two things: it marks the row read if it was
+ * unread, and it navigates if the row resolves to a target. Either may happen
+ * without the other. The write is not awaited, so a slow or failed mark never
+ * delays the navigation.
  *
- * "Mark all read" is THE ONLY mobile write to a business table in v1 — a
+ * "Mark all read" and per-row mark-as-read are THE ONLY mobile writes — a
  * deliberate, named break in the read-only-except-auth rule. It goes through
- * a SECURITY DEFINER RPC, never a direct table update. See mark-read.ts.
+ * SECURITY DEFINER RPCs, never a direct table update. See mark-read.ts.
  */
 export default function NotificationsScreen({
   onOpenClient,
@@ -90,13 +90,42 @@ export default function NotificationsScreen({
 
   const unreadCount = items.filter((i) => !i.isRead).length;
 
+  // Read inside the async badge update so it sees the post-update list, not
+  // the list captured at the moment the tap fired.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  const markOneRead = useCallback(async (id: string) => {
+    setMarkError(null);
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isRead: true } : i)));
+    try {
+      await markNotificationRead(id);
+      try {
+        await Notifications.setBadgeCountAsync(
+          itemsRef.current.filter((i) => !i.isRead).length,
+        );
+      } catch {
+        // The app-icon badge is cosmetic. A failure here must never surface as
+        // a failed mark-as-read, which has already committed.
+      }
+    } catch (e) {
+      // Roll the optimistic update back: the row is still unread on the server.
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isRead: false } : i)));
+      setMarkError(e instanceof Error ? e.message : 'Could not mark it read.');
+    }
+  }, []);
+
   const onRowPress = useCallback(
     (item: NotificationEntry) => {
+      if (!item.isRead) {
+        // Deliberately not awaited: navigation must not wait on a write.
+        markOneRead(item.id);
+      }
       if (item.target?.kind === 'client' && onOpenClient) {
         onOpenClient(item.target.clientId);
       }
     },
-    [onOpenClient],
+    [markOneRead, onOpenClient],
   );
 
   return (

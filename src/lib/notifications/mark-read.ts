@@ -23,3 +23,23 @@ export async function markAllNotificationsRead(): Promise<number> {
   if (error) throw error;
   return typeof data === 'number' ? data : 0;
 }
+
+/**
+ * Marks ONE notification read, by id.
+ *
+ * Same reasoning as the bulk call above: a SECURITY DEFINER RPC, never a
+ * direct `.update()`. The RPC's `user_id = auth.uid()::text` predicate is the
+ * only security boundary, because SECURITY DEFINER bypasses RLS.
+ *
+ * Returns 1 when a row was marked, 0 otherwise. A non-owner, a row that does
+ * not exist, and a row that was already read all return 0, deliberately
+ * indistinguishable, so the count is not an existence oracle. Callers must
+ * therefore NOT treat 0 as a failure.
+ */
+export async function markNotificationRead(notificationId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('mark_notification_read', {
+    p_notification_id: notificationId,
+  });
+  if (error) throw error;
+  return typeof data === 'number' ? data : 0;
+}
