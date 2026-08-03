@@ -6,11 +6,12 @@ import { Colors, Spacing } from '@/constants/theme';
 import type { NotificationEntry } from '@/lib/notifications/list';
 
 /**
- * One notification-list row. Becomes pressable ONLY when the notification
+ * One notification-list row. Becomes pressable when the notification either
  * resolves to a navigation target (v1: a client detail screen, keyed off
- * `data.client_id`). Rows with no target render exactly as before — no
+ * `data.client_id`) OR is still unread, because tapping an unread row marks
+ * it read. A row that is both read and untargeted has nothing to do — no
  * press handler, no affordance. Routing itself is owned by the caller via
- * `onPress`; this component holds no path literal. Unread state is carried
+ * `onPress`; this component holds no path literal and performs no write. Unread state is carried
  * by a colored edge bar, mirroring the
  * CA-home tier pattern (TriageRow): unread = accent edge, read = no edge.
  * `message` renders verbatim — some rows carry a pre-formatted rupee amount
@@ -27,7 +28,7 @@ export function NotificationRow({
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
 
-  const tappable = onPress != null && item.target != null;
+  const tappable = onPress != null && (item.target != null || !item.isRead);
 
   const inner = (
     <>
