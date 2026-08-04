@@ -53,11 +53,22 @@ export interface GstFilingEntry {
   updatedAt: string | null;
 }
 
+export interface DocumentEntry {
+  id: string;
+  fileName: string;
+  fileSize: number | null;
+  fileType: string | null;
+  category: string | null;
+  assessmentYear: string | null;
+  createdAt: string | null;
+}
+
 export interface ClientDetail {
   profile: ClientProfile;
   connection: ClientConnection | null;
   itrFilings: ItrFilingEntry[];
   gstFilings: GstFilingEntry[];
+  documents: DocumentEntry[];
 }
 
 export async function fetchClientDetail(userId: string, clientId: string): Promise<ClientDetail> {
@@ -69,7 +80,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       .maybeSingle(),
     supabase
       .from('connections')
-      .select('status, service_type, connected_at, created_at')
+      .select('id, status, service_type, connected_at, created_at')
       .eq('professional_id', userId)
       .eq('client_id', clientId)
       .eq('service_type', 'CA')
@@ -100,6 +111,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
   } | null;
 
   const conn = connRes.data as {
+    id: string;
     status: string;
     service_type: string;
     connected_at: string | null;
@@ -158,6 +170,41 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
     }))
     .sort((a, b) => (b.dueDate ?? '').localeCompare(a.dueDate ?? ''));
 
+  // Stage 2: documents hang off connection_id, never client_id. RLS keys on
+  // uploaded_by and mobile keys on connection_id; they are different columns
+  // and only one of them was ever correct. Errors throw rather than yielding
+  // an empty list, because an empty list is indistinguishable from success.
+  // storage_path is deliberately not selected: there is no download in v1.
+  let documents: DocumentEntry[] = [];
+  if (conn?.id) {
+    const docRes = await supabase
+      .from('documents')
+      .select('id, file_name, file_size, file_type, category, assessment_year, created_at')
+      .eq('connection_id', conn.id)
+      .eq('status', 'UPLOADED')
+      .neq('uploaded_by', userId)
+      .order('created_at', { ascending: false });
+    if (docRes.error) throw docRes.error;
+    const docRows = (docRes.data ?? []) as {
+      id: string;
+      file_name: string | null;
+      file_size: number | null;
+      file_type: string | null;
+      category: string | null;
+      assessment_year: string | null;
+      created_at: string | null;
+    }[];
+    documents = docRows.map((r) => ({
+      id: r.id,
+      fileName: r.file_name || 'Untitled document',
+      fileSize: r.file_size,
+      fileType: r.file_type,
+      category: r.category,
+      assessmentYear: r.assessment_year,
+      createdAt: r.created_at,
+    }));
+  }
+
   return {
     profile: {
       clientId,
@@ -175,5 +222,6 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       : null,
     itrFilings,
     gstFilings,
+    documents,
   };
 }

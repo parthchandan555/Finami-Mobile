@@ -43,6 +43,22 @@ function prettyDate(iso: string | null): string | null {
   });
 }
 
+function prettySize(bytes: number | null): string | null {
+  if (bytes == null || bytes <= 0) return null;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function docKind(fileType: string | null, fileName: string): string {
+  const parts = fileName.split('.');
+  const ext = parts.length > 1 ? parts[parts.length - 1] : '';
+  if (ext && ext.length <= 4) return ext.toUpperCase();
+  const sub = (fileType ?? '').split('/');
+  const tail = sub[sub.length - 1];
+  return tail ? tail.toUpperCase() : 'FILE';
+}
+
 function toneFor(status: string, dueDate: string | null, terminal: Set<string>): FilingTone {
   if (terminal.has(status)) return 'done';
   if (dueDate && dueDate.slice(0, 10) < todayISO()) return 'overdue';
@@ -166,6 +182,39 @@ export default function ClientDetailScreen({
                         tone={toneFor(f.status, f.dueDate, GST_TERMINAL)}
                         footer={f.acknowledgementNumber ? `Ack ${f.acknowledgementNumber}` : null}
                         onPress={() => onOpenFiling({ clientId, filingId: f.id, kind: 'gst' })}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.section}>
+                <View style={styles.sectionHead}>
+                  <ThemedText type="subtitle">Documents</ThemedText>
+                  <ThemedText type="small">{detail.documents.length}</ThemedText>
+                </View>
+                {detail.documents.length === 0 ? (
+                  <ThemedText type="small">No documents from this client yet.</ThemedText>
+                ) : (
+                  <View style={styles.list}>
+                    {detail.documents.map((d) => (
+                      <FilingRow
+                        key={d.id}
+                        title={d.fileName}
+                        subtitle={
+                          [d.category, prettySize(d.fileSize)].filter(Boolean).join(' · ') ||
+                          'No details recorded'
+                        }
+                        statusLabel={docKind(d.fileType, d.fileName)}
+                        tone="done"
+                        footer={
+                          [
+                            d.assessmentYear ? `AY ${d.assessmentYear}` : null,
+                            prettyDate(d.createdAt) ? `Uploaded ${prettyDate(d.createdAt)}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') || null
+                        }
                       />
                     ))}
                   </View>
