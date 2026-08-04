@@ -1,5 +1,6 @@
 import { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as Notifications from 'expo-notifications';
 
 import { supabase } from '@/lib/supabase';
 import { registerForPushNotifications } from '@/lib/notifications/register';
@@ -49,6 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    try {
+      await Notifications.setBadgeCountAsync(0);
+    } catch {
+      // A failed badge clear must never surface as a sign out error.
+    }
   };
 
   return (
