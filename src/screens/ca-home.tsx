@@ -34,14 +34,16 @@ export default function CaHomeScreen({
   onOpenQueue,
   onOpenClient,
   onOpenNotifications,
+  onOpenAbout,
 }: {
   onOpenQueue: () => void;
   onOpenClient: (clientId: string) => void;
   onOpenNotifications: () => void;
+  onOpenAbout: () => void;
 }) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
-  const { session, signOut } = useAuth();
+  const { session } = useAuth();
   const userId = session?.user?.id ?? '';
 
   const [loading, setLoading] = useState(true);
@@ -153,7 +155,7 @@ export default function CaHomeScreen({
                   unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
                 }
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.iconButton}
+                style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
               >
                 <SymbolView
                   name={{ ios: 'bell.fill', android: 'notifications', web: 'notifications' }}
@@ -169,12 +171,17 @@ export default function CaHomeScreen({
                 ) : null}
               </Pressable>
               <Pressable
-                onPress={signOut}
+                onPress={onOpenAbout}
                 accessibilityRole="button"
-                accessibilityLabel="Sign out"
-                style={({ pressed }) => [styles.signOut, { opacity: pressed ? 0.6 : 1 }]}
+                accessibilityLabel="About Finamize"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
               >
-                <ThemedText type="smallBold">Sign out</ThemedText>
+                <SymbolView
+                  name={{ ios: 'info.circle', android: 'info', web: 'info' }}
+                  size={22}
+                  tintColor={c.text}
+                />
               </Pressable>
             </View>
           </View>
@@ -293,10 +300,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     lineHeight: 12,
-  },
-  signOut: {
-    paddingHorizontal: Spacing.one,
-    paddingVertical: Spacing.one,
   },
   empty: { gap: Spacing.one },
   errorBox: { borderRadius: Spacing.two, padding: Spacing.three, gap: Spacing.two },
