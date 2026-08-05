@@ -4,6 +4,24 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * The Expo push token most recently written to `push_tokens` by this app run.
+ *
+ * The cache and the database row are set on the same success path, so a
+ * populated cache means a row exists. Sign out reads it to release that exact
+ * row, which is why the release is token scoped and not user scoped: a person
+ * signing out on one device must not silence push on another.
+ */
+let lastRegisteredToken: string | null = null;
+
+export function getLastRegisteredPushToken(): string | null {
+  return lastRegisteredToken;
+}
+
+export function forgetRegisteredPushToken(): void {
+  lastRegisteredToken = null;
+}
+
 // Fire-and-forget: push registration must never throw into auth or app start.
 export async function registerForPushNotifications(userId: string): Promise<void> {
   try {
@@ -37,6 +55,8 @@ export async function registerForPushNotifications(userId: string): Promise<void
       p_platform: Platform.OS,
       p_device_id: Device.modelName ?? null,
     });
+
+    lastRegisteredToken = token;
   } catch {
     // swallow — never break auth on a push failure
   }

@@ -3,7 +3,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 
 import { supabase } from '@/lib/supabase';
-import { registerForPushNotifications } from '@/lib/notifications/register';
+import {
+  forgetRegisteredPushToken,
+  getLastRegisteredPushToken,
+  registerForPushNotifications,
+} from '@/lib/notifications/register';
+import { releasePushToken } from '@/lib/notifications/release';
 
 type AuthContextType = {
   session: Session | null;
@@ -49,6 +54,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // ORDER IS LOAD BEARING. The release RPC is SECURITY DEFINER and scoped by
+    // auth.uid(); once supabase.auth.signOut() has run there is no auth.uid()
+    // and the call raises Unauthorized, leaving the token row behind. It must
+    // therefore happen while the session is still alive.
+    try {
+      const token = getLastRegisteredPushToken();
+      if (token) {
+        await releasePushToken(token);
+        forgetRegisteredPushToken();
+      }
+    } catch {
+      // A failed token release must never block sign out.
+    }
+
     await supabase.auth.signOut();
     try {
       await Notifications.setBadgeCountAsync(0);
