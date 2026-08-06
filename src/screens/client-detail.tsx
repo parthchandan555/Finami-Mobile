@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,6 +10,7 @@ import { BottomTabInset, Colors, MaxContentWidth, Spacing } from '@/constants/th
 import { useAuth } from '@/context/auth';
 import { FilingRow, type FilingTone } from '@/features/clients/FilingRow';
 import { fetchClientDetail, type ClientDetail } from '@/lib/clients/detail';
+import { createDocumentSignedUrl } from '@/lib/clients/document-url';
 import { formatPeriod } from '@/lib/ca-home/rules/ca';
 
 /**
@@ -105,6 +107,30 @@ export default function ClientDetailScreen({
     setRefreshing(true);
     load();
   }, [load]);
+
+  // Opening a document: the bucket is private, so we ask for a short-lived
+  // signed URL and show it in the in-app browser sheet. Storage RLS decides
+  // whether the URL is issued at all. A document whose object was never
+  // uploaded fails here and is reported as unavailable rather than silently
+  // doing nothing.
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+
+  const onOpenDocument = useCallback(
+    async (doc: { id: string; fileName: string; storagePath: string | null }) => {
+      if (openingDocId) return;
+      setOpeningDocId(doc.id);
+      try {
+        if (!doc.storagePath) throw new Error('No file is attached to this record.');
+        const url = await createDocumentSignedUrl(doc.storagePath);
+        await openBrowserAsync(url, { presentationStyle: WebBrowserPresentationStyle.AUTOMATIC });
+      } catch {
+        Alert.alert(doc.fileName, 'This file is not available.');
+      } finally {
+        setOpeningDocId(null);
+      }
+    },
+    [openingDocId],
+  );
 
   const place = [detail?.profile.city, detail?.profile.state].filter(Boolean).join(', ');
   const pan = detail?.itrFilings.find((f) => f.pan)?.pan ?? null;
@@ -215,6 +241,7 @@ export default function ClientDetailScreen({
                             .filter(Boolean)
                             .join(' · ') || null
                         }
+                        onPress={() => onOpenDocument(d)}
                       />
                     ))}
                   </View>

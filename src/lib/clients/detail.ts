@@ -61,6 +61,7 @@ export interface DocumentEntry {
   category: string | null;
   assessmentYear: string | null;
   createdAt: string | null;
+  storagePath: string | null;
 }
 
 export interface ClientDetail {
@@ -174,12 +175,14 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
   // uploaded_by and mobile keys on connection_id; they are different columns
   // and only one of them was ever correct. Errors throw rather than yielding
   // an empty list, because an empty list is indistinguishable from success.
-  // storage_path is deliberately not selected: there is no download in v1.
+  // storage_path is selected so a row can be opened. The bucket is private,
+  // so only a signed URL reads an object, and storage RLS checks the caller at
+  // signing time.
   let documents: DocumentEntry[] = [];
   if (conn?.id) {
     const docRes = await supabase
       .from('documents')
-      .select('id, file_name, file_size, file_type, category, assessment_year, created_at')
+      .select('id, file_name, file_size, file_type, category, assessment_year, created_at, storage_path')
       .eq('connection_id', conn.id)
       .eq('status', 'UPLOADED')
       .neq('uploaded_by', userId)
@@ -193,6 +196,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       category: string | null;
       assessment_year: string | null;
       created_at: string | null;
+      storage_path: string | null;
     }[];
     documents = docRows.map((r) => ({
       id: r.id,
@@ -202,6 +206,7 @@ export async function fetchClientDetail(userId: string, clientId: string): Promi
       category: r.category,
       assessmentYear: r.assessment_year,
       createdAt: r.created_at,
+      storagePath: r.storage_path,
     }));
   }
 
