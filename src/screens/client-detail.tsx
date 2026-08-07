@@ -10,7 +10,7 @@ import { BottomTabInset, Colors, MaxContentWidth, Spacing } from '@/constants/th
 import { useAuth } from '@/context/auth';
 import { FilingRow, type FilingTone } from '@/features/clients/FilingRow';
 import { fetchClientDetail, type ClientDetail } from '@/lib/clients/detail';
-import { createDocumentSignedUrl } from '@/lib/clients/document-url';
+import { createDocumentSignedUrl, rendersInline } from '@/lib/clients/document-url';
 import { formatPeriod } from '@/lib/ca-home/rules/ca';
 
 /**
@@ -119,12 +119,20 @@ export default function ClientDetailScreen({
   const [openingDocId, setOpeningDocId] = useState<string | null>(null);
 
   const onOpenDocument = useCallback(
-    async (doc: { id: string; fileName: string; storagePath: string | null }) => {
+    async (doc: {
+      id: string;
+      fileName: string;
+      fileType: string | null;
+      storagePath: string | null;
+    }) => {
       if (openingDocId) return;
       setOpeningDocId(doc.id);
       try {
         if (!doc.storagePath) throw new Error('No file is attached to this record.');
-        const url = await createDocumentSignedUrl(doc.storagePath);
+        const url = await createDocumentSignedUrl(
+          doc.storagePath,
+          rendersInline(doc.fileType) ? null : doc.fileName,
+        );
         await openBrowserAsync(url, { presentationStyle: WebBrowserPresentationStyle.AUTOMATIC });
       } catch {
         Alert.alert(doc.fileName, 'This file is not available.');
