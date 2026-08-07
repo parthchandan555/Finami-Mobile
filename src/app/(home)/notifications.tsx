@@ -5,8 +5,11 @@ import NotificationsScreen from '@/screens/notifications';
 export default function NotificationsRoute() {
   return (
     <NotificationsScreen
-      onOpenClient={(clientId) =>
-        router.push({ pathname: '/client/[clientId]', params: { clientId } })
+      onOpenClient={(clientId, documentId) =>
+        router.push({
+          pathname: '/client/[clientId]',
+          params: documentId ? { clientId, documentId } : { clientId },
+        })
       }
     />
   );

@@ -29,7 +29,7 @@ import { NotificationRow } from '@/features/notifications/NotificationRow';
 export default function NotificationsScreen({
   onOpenClient,
 }: {
-  onOpenClient?: (clientId: string) => void;
+  onOpenClient?: (clientId: string, documentId?: string) => void;
 } = {}) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
@@ -122,7 +122,7 @@ export default function NotificationsScreen({
         markOneRead(item.id);
       }
       if (item.target?.kind === 'client' && onOpenClient) {
-        onOpenClient(item.target.clientId);
+        onOpenClient(item.target.clientId, item.target.documentId);
       }
     },
     [markOneRead, onOpenClient],
