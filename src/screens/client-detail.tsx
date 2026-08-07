@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -74,7 +74,10 @@ export default function ClientDetailScreen({
 }) {
   const scheme: 'light' | 'dark' = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = Colors[scheme];
-  const { clientId } = useLocalSearchParams<{ clientId: string }>();
+  const { clientId, documentId } = useLocalSearchParams<{
+    clientId: string;
+    documentId?: string;
+  }>();
   const { session } = useAuth();
   const userId = session?.user?.id ?? '';
 
@@ -131,6 +134,26 @@ export default function ClientDetailScreen({
     },
     [openingDocId],
   );
+
+  // C.14 - arrived from a document notification. Open that one document once,
+  // after the list has resolved. The ref guard is what makes it once: this
+  // effect re-runs whenever onOpenDocument's identity changes, and a
+  // pull-to-refresh replaces `detail` entirely.
+  //
+  // A documentId that is not in this client's visible list - uploaded by us
+  // and filtered out, or detached from the connection - lands on the screen
+  // with nothing opened. That is deliberate: the alert belongs to a row the
+  // person actually tapped, not to an arrival.
+  const autoOpenedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!documentId || !detail) return;
+    if (autoOpenedRef.current === documentId) return;
+    const doc = detail.documents.find((d) => d.id === documentId);
+    if (!doc) return;
+    autoOpenedRef.current = documentId;
+    onOpenDocument(doc);
+  }, [documentId, detail, onOpenDocument]);
 
   const place = [detail?.profile.city, detail?.profile.state].filter(Boolean).join(', ');
   const pan = detail?.itrFilings.find((f) => f.pan)?.pan ?? null;

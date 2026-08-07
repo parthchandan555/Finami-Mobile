@@ -26,13 +26,24 @@
  * (live data includes ids like `seed-stress-test-v1-arch2-5`). Treat it as an
  * opaque string; never validate it as a uuid.
  */
-export type NotificationTarget = { kind: 'client'; clientId: string };
+export type NotificationTarget = {
+  kind: 'client';
+  clientId: string;
+  /**
+   * Present only when the notification is about one specific document (C.14).
+   * `client_id` alone still decides whether the row is routable at all; the
+   * document is a refinement of that destination, never a substitute for it.
+   */
+  documentId?: string;
+};
 
 export function resolveNotificationTarget(data: unknown): NotificationTarget | null {
   if (!data || typeof data !== 'object') return null;
-  const clientId = (data as Record<string, unknown>).client_id;
-  if (typeof clientId === 'string' && clientId.length > 0) {
-    return { kind: 'client', clientId };
-  }
-  return null;
+  const record = data as Record<string, unknown>;
+  const clientId = record.client_id;
+  if (typeof clientId !== 'string' || clientId.length === 0) return null;
+  const documentId = record.document_id;
+  return typeof documentId === 'string' && documentId.length > 0
+    ? { kind: 'client', clientId, documentId }
+    : { kind: 'client', clientId };
 }
