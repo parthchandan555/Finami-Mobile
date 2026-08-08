@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import * as Notifications from 'expo-notifications';
+import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -74,25 +75,34 @@ export default function CaHomeScreen({
       setLoading(false);
       setRefreshing(false);
     }
+  }, [userId]);
 
-    // Unread-count sync — isolated try/catch so a notifications failure
-    // never blocks Home. Also mirrors the count onto the OS app-icon badge.
-    // That badge only reflects reality when the app is opened/foregrounded:
-    // no push send-path exists yet (item 18), so it is NOT updated live in
-    // the background the way a delivered push notification's badge would be.
+  // Unread-count sync — deliberately outside load() and inside its own
+  // try/catch, so a notifications failure never blocks Home. Also mirrors the
+  // count onto the OS app-icon badge. Runs on every focus, not only on mount,
+  // so returning from the notifications screen after mark-all-read shows the
+  // new count instead of the stale one (C.15).
+  const syncUnread = useCallback(async () => {
+    if (!userId) return;
     try {
       const notes = await fetchNotifications(userId);
       const unread = notes.filter((n) => !n.isRead).length;
       setUnreadCount(unread);
       await Notifications.setBadgeCountAsync(unread);
     } catch {
-      // Non-fatal — Home's own data already rendered above.
+      // Non-fatal — Home's own data renders independently.
     }
   }, [userId]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      syncUnread();
+    }, [syncUnread]),
+  );
 
   // Items carrying a clientId push client detail. CA-6 (pending connections)
   // deliberately has none: a PENDING connection resolves no name and no
@@ -133,7 +143,8 @@ export default function CaHomeScreen({
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     load();
-  }, [load]);
+    syncUnread();
+  }, [load, syncUnread]);
 
   const trueTotal = data ? items.length + data.triageTotalPadding : undefined;
 
